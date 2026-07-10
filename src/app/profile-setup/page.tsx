@@ -167,34 +167,40 @@ export default function ProfileSetupPage() {
   async function handleFinish() {
     setLoading(true);
     setError("");
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      router.push("/login");
-      return;
-    }
-    // upsert = insert if new, update if a row already exists for this user
-    const { error: upsertError } = await supabase.from("profiles").upsert({
-      id: user.id,
-      age: Number(age),
-      gender,
-      height_cm: Number(heightCm),
-      weight_kg: Number(weightKg),
-      activity_level: activityLevel,
-      goals,
-      health_conditions: healthConditions,
-      mental_conditions: mentalConditions,
-      updated_at: new Date().toISOString(),
-    });
-    if (upsertError) {
-      setError(upsertError.message);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+      // upsert = insert if new, update if a row already exists for this user
+      const { error: upsertError } = await supabase.from("profiles").upsert({
+        id: user.id,
+        age: Number(age),
+        gender,
+        height_cm: Number(heightCm),
+        weight_kg: Number(weightKg),
+        activity_level: activityLevel,
+        goals,
+        health_conditions: healthConditions,
+        mental_conditions: mentalConditions,
+        updated_at: new Date().toISOString(),
+      });
+      if (upsertError) {
+        setError(upsertError.message);
+        setLoading(false);
+        return;
+      }
+      router.push("/dashboard");
+      router.refresh();
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Something went wrong";
+      setError(`${message}. Please try again.`);
       setLoading(false);
-      return;
     }
-    router.push("/dashboard");
-    router.refresh();
   }
 
   // Guard so you can't advance without filling in the current step
