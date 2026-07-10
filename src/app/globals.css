@@ -1,26 +1,32 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* Galaxy palette — matches the mockup design system */
+  --color-space: #0f0724;
+  --color-card: #1e1145;
+  --color-primary: #9d4edd;
+  --color-highlight: #c77dff;
+  --color-pink: #ff6bcb;
+  --color-cyan: #7df9ff;
+  --color-emergency: #ff3b6b;
+  --color-lavender: #e4d4ff;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-space);
+  color: var(--color-lavender);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+
+  /* Subtle starfield — tiny white dots scattered across the background */
+  background-image:
+    radial-gradient(circle at 15% 25%, rgba(255, 255, 255, 0.10) 1px, transparent 1.5px),
+    radial-gradient(circle at 65% 65%, rgba(255, 255, 255, 0.08) 1px, transparent 1.5px),
+    radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.06) 1px, transparent 1.5px),
+    radial-gradient(circle at 35% 85%, rgba(255, 255, 255, 0.09) 1px, transparent 1.5px),
+    radial-gradient(circle at 50% 50%, rgba(199, 125, 255, 0.04) 1px, transparent 2px);
+  background-size: 220px 220px, 170px 170px, 130px 130px, 190px 190px, 280px 280px;
 }
