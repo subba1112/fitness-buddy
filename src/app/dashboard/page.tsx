@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Droplet, Footprints, Utensils } from "lucide-react";
+import { Droplet, Footprints, Utensils, Flame } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "./logout-button";
 
 const WATER_TARGET_ML = 3000;
 const STEPS_TARGET = 10000;
 const CALORIES_TARGET = 2000;
+const CALORIES_OUT_TARGET = 400;
 
 function toLocalDateString(d: Date): string {
   const year = d.getFullYear();
@@ -102,6 +103,21 @@ export default async function DashboardPage() {
   const caloriesPercent = Math.min(
     100,
     Math.round((caloriesInToday / CALORIES_TARGET) * 100),
+  );
+
+  // Calories out — sum from today's activity logs
+  const { data: activityLogs } = await supabase
+    .from("activity_logs")
+    .select("calories_burnt")
+    .eq("user_id", user.id)
+    .gte("logged_at", startOfToday.toISOString())
+    .lt("logged_at", startOfTomorrow.toISOString());
+
+  const caloriesOutToday =
+    activityLogs?.reduce((sum, log) => sum + log.calories_burnt, 0) || 0;
+  const caloriesOutPercent = Math.min(
+    100,
+    Math.round((caloriesOutToday / CALORIES_OUT_TARGET) * 100),
   );
 
   return (
@@ -209,20 +225,35 @@ export default async function DashboardPage() {
           </p>
         </Link>
 
-        {/* Placeholder for the last tracker */}
-        <ComingSoonCard label="Calories Out" phase="5D" />
+        {/* Calories Out — live */}
+        <Link
+          href="/activities"
+          className="rounded-2xl border border-primary/40 bg-card/60 p-5 transition-all hover:border-pink/60 hover:shadow-[0_0_25px_rgba(255,107,203,0.15)]"
+        >
+          <div className="mb-3 flex items-center justify-between">
+            <Flame className="h-6 w-6 text-pink" />
+            <span className="h-2 w-2 rounded-full bg-pink" />
+          </div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-lavender/70">
+            Calories Out
+          </p>
+          <p className="mt-2 text-3xl font-bold text-white">
+            {caloriesOutToday.toLocaleString()}
+            <span className="ml-1 text-base font-normal text-lavender/70">
+              / {CALORIES_OUT_TARGET.toLocaleString()}
+            </span>
+          </p>
+          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-space/60">
+            <div
+              className="h-full rounded-full bg-pink transition-all"
+              style={{ width: `${caloriesOutPercent}%` }}
+            />
+          </div>
+          <p className="mt-2 text-xs text-lavender/60">
+            {caloriesOutPercent}% of daily target
+          </p>
+        </Link>
       </div>
-    </div>
-  );
-}
-
-function ComingSoonCard({ label, phase }: { label: string; phase: string }) {
-  return (
-    <div className="rounded-2xl border border-dashed border-primary/30 bg-card/30 p-5">
-      <p className="text-xs font-semibold uppercase tracking-widest text-lavender/50">
-        {label}
-      </p>
-      <p className="mt-2 text-sm text-lavender/50">Coming in Phase {phase}</p>
     </div>
   );
 }
