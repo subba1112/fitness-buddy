@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Droplet, Footprints } from "lucide-react";
+import { Droplet, Footprints, Utensils } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "./logout-button";
 
 const WATER_TARGET_ML = 3000;
 const STEPS_TARGET = 10000;
+const CALORIES_TARGET = 2000;
 
 function toLocalDateString(d: Date): string {
   const year = d.getFullYear();
@@ -89,6 +90,20 @@ export default async function DashboardPage() {
     Math.round((stepsToday / STEPS_TARGET) * 100),
   );
 
+  // Calories in — sum across all meal_logs entries for today
+  const { data: mealLogs } = await supabase
+    .from("meal_logs")
+    .select("calories")
+    .eq("user_id", user.id)
+    .eq("log_date", todayDateString);
+
+  const caloriesInToday =
+    mealLogs?.reduce((sum, log) => sum + log.calories, 0) || 0;
+  const caloriesPercent = Math.min(
+    100,
+    Math.round((caloriesInToday / CALORIES_TARGET) * 100),
+  );
+
   return (
     <div className="flex flex-1 flex-col px-6 py-8 md:px-12">
       {/* Greeting */}
@@ -165,8 +180,36 @@ export default async function DashboardPage() {
           </p>
         </Link>
 
-        {/* Placeholders for the trackers we'll build next */}
-        <ComingSoonCard label="Calories In" phase="5C" />
+        {/* Calories In — live */}
+        <Link
+          href="/meals"
+          className="rounded-2xl border border-primary/40 bg-card/60 p-5 transition-all hover:border-orange-400/60 hover:shadow-[0_0_25px_rgba(251,146,60,0.15)]"
+        >
+          <div className="mb-3 flex items-center justify-between">
+            <Utensils className="h-6 w-6 text-orange-400" />
+            <span className="h-2 w-2 rounded-full bg-orange-400" />
+          </div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-lavender/70">
+            Calories In
+          </p>
+          <p className="mt-2 text-3xl font-bold text-white">
+            {caloriesInToday.toLocaleString()}
+            <span className="ml-1 text-base font-normal text-lavender/70">
+              / {CALORIES_TARGET.toLocaleString()}
+            </span>
+          </p>
+          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-space/60">
+            <div
+              className="h-full rounded-full bg-orange-400 transition-all"
+              style={{ width: `${caloriesPercent}%` }}
+            />
+          </div>
+          <p className="mt-2 text-xs text-lavender/60">
+            {caloriesPercent}% of daily target
+          </p>
+        </Link>
+
+        {/* Placeholder for the last tracker */}
         <ComingSoonCard label="Calories Out" phase="5D" />
       </div>
     </div>
