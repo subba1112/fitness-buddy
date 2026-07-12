@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Droplet, Footprints, Utensils, Flame } from "lucide-react";
+import { Droplet, Footprints, Utensils, Flame, HeartPulse } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "./logout-button";
 
@@ -119,6 +119,19 @@ export default async function DashboardPage() {
     100,
     Math.round((caloriesOutToday / CALORIES_OUT_TARGET) * 100),
   );
+
+  // Weekly craving stats — last 7 days
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const { data: weekSessions } = await supabase
+    .from("crave_sessions")
+    .select("outcome")
+    .eq("user_id", user.id)
+    .gte("started_at", sevenDaysAgo.toISOString())
+    .not("outcome", "is", null);
+
+  const totalCravings = weekSessions?.length || 0;
+  const resistedCount =
+    weekSessions?.filter((s) => s.outcome === "resisted").length || 0;
 
   return (
     <div className="flex flex-1 flex-col px-6 py-8 md:px-12">
@@ -254,6 +267,34 @@ export default async function DashboardPage() {
           </p>
         </Link>
       </div>
+
+      {/* Crave Killer emergency bar */}
+      <Link
+        href="/craving"
+        className="mt-6 flex flex-col items-start justify-between gap-4 rounded-2xl border border-emergency/50 bg-emergency/5 p-5 transition-all hover:border-emergency hover:bg-emergency/10 hover:shadow-[0_0_40px_rgba(255,59,107,0.25)] md:flex-row md:items-center"
+      >
+        <div className="flex items-center gap-4">
+          <HeartPulse className="h-8 w-8 shrink-0 text-emergency" />
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-emergency">
+              Crave Killer
+            </p>
+            <p className="mt-1 text-lg font-bold text-white">
+              Feeling an urge? Your buddy is one tap away.
+            </p>
+            <p className="mt-1 text-xs text-lavender/60">
+              {totalCravings > 0
+                ? `Resisted ${resistedCount} out of ${totalCravings} craving${
+                    totalCravings === 1 ? "" : "s"
+                  } this week`
+                : "No cravings logged this week — keep going!"}
+            </p>
+          </div>
+        </div>
+        <div className="rounded-full bg-emergency px-6 py-3 font-bold tracking-widest text-white shadow-[0_0_25px_rgba(255,59,107,0.4)]">
+          EMERGENCY →
+        </div>
+      </Link>
     </div>
   );
 }
